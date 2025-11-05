@@ -8,7 +8,7 @@ import androidx.room.RoomDatabase
 @Database(entities = [Expense::class], version = 1)
 abstract class ExpenseDatabase : RoomDatabase() {
     abstract fun expenseDao(): ExpenseDao
-
+    abstract fun categoryDao(): CategoryDao
     companion object {
         @Volatile
         private var INSTANCE: ExpenseDatabase? = null
