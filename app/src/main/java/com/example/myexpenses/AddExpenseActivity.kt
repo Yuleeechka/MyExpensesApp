@@ -1,35 +1,56 @@
 package com.example.myexpenses
 
+import android.R
 import android.os.Build
 import android.os.Bundle
+import android.text.InputType
+import android.widget.ArrayAdapter
 import android.widget.Toast
+import android.widget.EditText
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.myexpenses.data.Expense
 import com.example.myexpenses.data.ExpenseDatabase
 import com.example.myexpenses.databinding.ActivityAddExpenseBinding
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import com.example.myexpenses.data.Category
+import com.example.myexpenses.data.CategoryDao
+
 
 class AddExpenseActivity : AppCompatActivity() {
 
+
     private lateinit var binding: ActivityAddExpenseBinding
+    private lateinit var db: ExpenseDatabase
+    private lateinit var categoryDao: CategoryDao
+    private lateinit var categories: MutableList<Category>
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityAddExpenseBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        db = ExpenseDatabase.getDatabase(this)
+        categoryDao = db.categoryDao()
+
+        loadCategories()
 
         val dao = ExpenseDatabase.getDatabase(this).expenseDao()
+
+        binding.buttonAddCategory.setOnClickListener {
+            showAddCategoryDialog()
+        }
+
 
         binding.saveButton.setOnClickListener {
             val description = binding.editDescription.text.toString().take(100).trim()
             val amount = binding.editAmount.text.toString().toDoubleOrNull()
+            val selectedCategoryPosition = binding.spinnerCategory.selectedItemPosition
+            val categoryId = categories[selectedCategoryPosition].id
 
             if (description.isBlank() || amount == null) {
                 Toast.makeText(this, "Заполните оба поля корректно", Toast.LENGTH_SHORT).show()
@@ -41,8 +62,15 @@ class AddExpenseActivity : AppCompatActivity() {
 
             val date = dateTimeString
 
+            val expense = Expense(
+                description = description,
+                amount = amount,
+                date = date,
+                categoryId = categoryId   // ← вот оно!
+            )
+
             lifecycleScope.launch {
-                dao.insert(Expense(description = description, amount = amount, date = date))
+                dao.insert(Expense(description = description, amount = amount, date = date, categoryId = categoryId))
                 finish()
             }
         }
